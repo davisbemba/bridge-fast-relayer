@@ -33,3 +33,18 @@ python3 drain.py send     # broadcast (after the address flips or after approval
 `finalize_transfer_sol` verifies the MPC signature against `config.derived_near_bridge_address`. When the derived key is lost, no inbound NEAR->SOL transfer can be finalized and the SOL in the vault is stuck. Rotating the field is the exit. EVM has `setNearBridgeDerivedAddress` behind `DEFAULT_ADMIN_ROLE`; #553 added the same for Starknet (`set_omni_bridge_derived_address`, described there as *"a dedicated operational control, separate from upgrade flow"*). Solana has no equivalent.
 
 If #659 lands in the same batch, `finalize_transfer_sol` also needs an active `relayer_state` PDA (`[b"relayer", payer]`) and `grant_trusted_relayer` for the payer — `apply_for_trusted_relayer` reverts `RelayerStakingDisabled` while the stake field is zero.
+
+## Fork proof
+
+Run on a mainnet fork: `solana-test-validator` cloning the program, wormhole core, the shim, the vault and every PDA, with the config account's 64 bytes at offset 48 swapped for our key and nothing else changed.
+
+```
+Program log: Instruction: FinalizeTransferSol
+Program log: Finalizing transfer
+Program log: Sequence: 1210633
+err: null   CU: 94774 / 200000   fee: 5000
+```
+
+Real send on the fork: `2Ue9BiiLotHbQKSbmmBXihofRwfaYTgcVPZuqWqZhAAp1SMHMuaKrHYu3bBUf37MZaxqtCZhyhckayPiDSKbgKyR` finalized, payer 10 SOL -> 27934.652821268 SOL.
+
+Only the 3-of-5 signature is untested; everything after it is proven.
